@@ -3,6 +3,7 @@ module github.com/antonminaichev/gophermart-loyalty
 go 1.23.6
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
