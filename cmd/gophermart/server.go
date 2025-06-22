@@ -35,7 +35,7 @@ func run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	store, err := storage.NewPostgresStorage(cfg.DatabaseConnection)
+	store, err := storage.NewPostgresStorage(cfg.DatabaseConnection, cfg.MigrationDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize Postgres storage: %v", err)
 	}
@@ -62,14 +62,15 @@ func run() error {
 	srv := &http.Server{
 		Addr:         cfg.Address,
 		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
 	}
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: cfg.ClientTimeout,
 	}
+
 	accrual := &order.HTTPAccrualClient{
 		Client:         httpClient,
 		AccrualAddress: cfg.AccrualAdress,

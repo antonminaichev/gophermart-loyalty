@@ -9,15 +9,15 @@ import (
 	"github.com/antonminaichev/gophermart-loyalty/internal/types/balance"
 	"github.com/antonminaichev/gophermart-loyalty/internal/types/order"
 	"github.com/antonminaichev/gophermart-loyalty/internal/types/user"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 type PostgresStorage struct {
 	db *sql.DB
 }
 
-func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
+func NewPostgresStorage(dsn string, migrationsDir string) (*PostgresStorage, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
@@ -28,45 +28,16 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 	if err := s.db.Ping(); err != nil {
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
-	// создаём таблицы
-	if err := s.initSchema(); err != nil {
-		db.Close()
-		return nil, err
-	}
-	return s, nil
-}
 
-func (s *PostgresStorage) initSchema() error {
-	stmts := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            login TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL
-        )`,
-		`CREATE TABLE IF NOT EXISTS orders (
-            id SERIAL PRIMARY KEY,
-            user_id INT NOT NULL REFERENCES users(id),
-            number TEXT UNIQUE NOT NULL,
-            status TEXT NOT NULL,
-            accrual_amount DOUBLE PRECISION,
-            uploaded_at TIMESTAMPTZ NOT NULL,
-            processed_at TIMESTAMPTZ
-        )`,
-		`CREATE TABLE IF NOT EXISTS withdrawals (
-            id SERIAL PRIMARY KEY,
-            user_id INT NOT NULL REFERENCES users(id),
-			order_number TEXT NOT NULL,
-            amount DOUBLE PRECISION NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL
-        )`,
+	if err := goose.SetDialect("postgres"); err != nil {
+		return nil, fmt.Errorf("set goose dialect: %w", err)
 	}
-	for _, q := range stmts {
-		if _, err := s.db.Exec(q); err != nil {
-			return fmt.Errorf("init schema: %w", err)
-		}
+
+	if err := goose.Up(s.db, migrationsDir); err != nil {
+		return nil, fmt.Errorf("apply migrations: %w", err)
 	}
-	return nil
+
+	return s, nil
 }
 
 func (s *PostgresStorage) Ping(ctx context.Context) error {

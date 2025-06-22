@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/antonminaichev/gophermart-loyalty/internal/types/order"
-	"github.com/antonminaichev/gophermart-loyalty/internal/util/luna"
+	"github.com/antonminaichev/gophermart-loyalty/internal/validation/luna"
 )
 
 var (
